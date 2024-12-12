@@ -61,7 +61,12 @@ const categorySets: Record<string, CategorySet> = {
         imgPath: './images/spellcaster.png',
         text: 'Spellcaster',
       },
-      { checkFor: 'ATK', val: 1800, imgPath: './images', text: '1800 ATK' },
+      {
+        checkFor: 'atk',
+        val: 2400,
+        imgPath: './images/ATK.png',
+        text: '2400 ATK',
+      },
       {
         checkFor: 'atk',
         val: 2800,
@@ -76,7 +81,12 @@ const categorySets: Record<string, CategorySet> = {
         imgPath: './images/FIRE.png',
         text: 'FIRE',
       },
-      { checkFor: 'level', val: 7, imgPath: './images', text: 'Level 7' },
+      {
+        checkFor: 'level',
+        val: 7,
+        imgPath: './images/levelstar.png',
+        text: 'Level 7',
+      },
       {
         checkFor: 'frameType',
         val: 'synchro',
@@ -85,14 +95,62 @@ const categorySets: Record<string, CategorySet> = {
       },
     ],
   },
+  '3': {
+    topCategories: [
+      {
+        checkFor: 'frameType',
+        val: 'effect',
+        imgPath: './images/effect.png',
+        text: 'Effect',
+      },
+      {
+        checkFor: 'frameType',
+        val: 'normal',
+        imgPath: './images/normal.png',
+        text: 'Normal',
+      },
+      {
+        checkFor: 'race',
+        val: 'Dragon',
+        imgPath: './images/dragon.png',
+        text: 'Dragon',
+      },
+    ],
+    leftCategories: [
+      {
+        checkFor: 'attribute',
+        val: 'LIGHT',
+        imgPath: './images/LIGHT.png',
+        text: 'LIGHT',
+      },
+      {
+        checkFor: 'level',
+        val: 7,
+        imgPath: './images/levelstar.png',
+        text: 'Level 7',
+      },
+      {
+        checkFor: 'atk',
+        val: 2400,
+        imgPath: './images/ATK.png',
+        text: '2400 ATK',
+      },
+    ],
+  },
 };
 
-const currentGridId: number = 1;
+const $gridIDLabel = document.querySelector('.grid-ID-label') as HTMLDivElement;
+if (!$gridIDLabel) throw new Error('.grid-ID-label query failed!');
+
+let currentGridId: number = 3;
 const gridSize: number = 3;
 
 let numCorrect: number = 0;
 let guesses: number = 0;
 let completedSquares: number = 0;
+let currentMonsters: string[] = [];
+
+$gridIDLabel.textContent = `#${currentGridId.toString()}`;
 
 const $topCategories = document.querySelectorAll(
   '.top-cat',
@@ -292,6 +350,7 @@ async function fetchData(usrInput: string): Promise<void> {
       numCorrect++;
       guesses++;
       completedSquares++;
+      currentMonsters.push(cardData.name.toLowerCase());
 
       clearSelectedSqResetModal($selectedSq);
     } else {
@@ -392,6 +451,7 @@ function clearGrid(): void {
   guesses = 0;
   numCorrect = 0;
   completedSquares = 0;
+  currentMonsters = [];
   setStatsText();
   $statsHeading.textContent = 'Stats';
 
@@ -408,4 +468,112 @@ function clearGrid(): void {
       element.removeChild(element.firstChild);
     }
   }
+}
+
+const $switcher = document.querySelector('.switcher-square') as HTMLDivElement;
+if (!$switcher) throw new Error('.switcher-square query failed!');
+const $categoryModal = document.querySelector(
+  '.grid-cats',
+) as HTMLDialogElement;
+if (!$categoryModal) throw new Error('.grid-cats query failed!');
+const $gridSetsContainer = document.querySelector(
+  '.grid-sets-container',
+) as HTMLDivElement;
+if (!$gridContainer) throw new Error('.grid-sets-container query failed!');
+
+$switcher.addEventListener('click', function (): void {
+  $categoryModal.show();
+});
+
+function renderRow(dataGridId: number): HTMLDivElement {
+  const gridRow = document.createElement('div');
+  gridRow.classList.add(
+    'flex',
+    'py-1',
+    'ml-2',
+    'rounded-xl',
+    'hover:bg-yellow-200',
+    'main-content',
+    'select-grid',
+  );
+  // create row
+  if (currentGridId === dataGridId) {
+    gridRow.classList.add('bg-yellow-500', 'selected-grid-cat-row');
+    gridRow.classList.remove('hover:bg-yellow-200');
+  }
+
+  const imgContainer = document.createElement('div');
+  imgContainer.classList.add('w-1/12', 'main-content');
+  const puzzImg = document.createElement('img');
+  puzzImg.setAttribute('src', './images/puzzle.png');
+  puzzImg.classList.add('main-content');
+  imgContainer.appendChild(puzzImg);
+  // create image container containing image
+
+  const gridRowTxt = document.createElement('h1');
+  gridRowTxt.textContent = `Grid #${dataGridId}`;
+  gridRowTxt.classList.add('main-content');
+
+  gridRow.appendChild(imgContainer);
+  gridRow.appendChild(gridRowTxt);
+
+  return gridRow;
+}
+
+for (const categorySet in categorySets) {
+  const gridCatRow = renderRow(parseInt(categorySet));
+  gridCatRow.setAttribute('data-grid-ID', categorySet);
+  $gridSetsContainer.appendChild(gridCatRow);
+}
+
+$categoryModal.addEventListener('click', function (event: Event): void {
+  const element = event.target as HTMLElement;
+  const closestCatRow = element.closest('.select-grid') as HTMLElement;
+
+  const $selectedRow = document.querySelector(
+    '.selected-grid-cat-row',
+  ) as HTMLDivElement;
+  if (!$selectedRow) throw new Error('.selected-grid-cat-row query failed!');
+
+  if (
+    !element.classList.contains('main-content') ||
+    closestCatRow.classList.contains('selected-grid-cat-row')
+  ) {
+    $categoryModal.close();
+  } else if (
+    element.tagName === 'IMG' ||
+    element.tagName === 'H1' ||
+    element.tagName === 'DIV'
+  ) {
+    const closestGridId = closestCatRow.getAttribute('data-grid-ID');
+    if (!closestGridId) throw new Error('No grid ID found');
+
+    newGridCategories(parseInt(closestGridId));
+
+    $selectedRow.classList.remove('bg-yellow-500', 'selected-grid-cat-row');
+    $selectedRow.classList.add('hover:bg-yellow-200');
+
+    closestCatRow.classList.add('selected-grid-cat-row', 'bg-yellow-500');
+    closestCatRow.classList.remove('hover:bg-yellow-200');
+    $categoryModal.close();
+  }
+});
+
+function newGridCategories(newGridId: number): void {
+  clearGrid();
+  currentGridId = newGridId;
+  $gridIDLabel.textContent = '#' + currentGridId.toString();
+
+  for (let i = 0; i < gridSize; i++) {
+    const topCatElement = $topCategories[i] as HTMLElement;
+    const leftCatElement = $leftCategories[i] as HTMLElement;
+    while (topCatElement.firstChild) {
+      topCatElement.removeChild(topCatElement.firstChild);
+    }
+    while (leftCatElement.firstChild) {
+      leftCatElement.removeChild(leftCatElement.firstChild);
+    }
+  }
+
+  renderGridCategories(newGridId);
 }

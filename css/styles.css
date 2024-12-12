@@ -51,3 +51,9 @@ input:focus {
   background-color: #7d3e12;
   color: white;
 }
+
+.grid-sets-container {
+  overflow: auto;
+  height: 200px;
+  outline-width: 0;
+}
